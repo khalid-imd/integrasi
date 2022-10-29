@@ -2,16 +2,20 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	dto "fundamental-golang/dto/result"
 	usersdto "fundamental-golang/dto/users"
 	"fundamental-golang/models"
 	"fundamental-golang/repositories"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 )
+
+var PATH_FILE = "http://localhost:5000/uploads/"
 
 type handler struct {
 	UserRepository repositories.UserRepository
@@ -71,11 +75,8 @@ func convertResponse(u models.User) usersdto.UserResponse {
 		Phone:    u.Phone,
 		Location: u.Location,
 		Image:    u.Image,
-		Role:     u.Role,
 	}
 }
-
-// previous code...
 
 func (h *handler) FindUsers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -85,6 +86,10 @@ func (h *handler) FindUsers(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
 		json.NewEncoder(w).Encode(response)
+	}
+
+	for i, p := range users {
+		users[i].Image = os.Getenv("PATH_FILE") + p.Image
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -105,6 +110,8 @@ func (h *handler) GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user.Image = os.Getenv("PATH_FILE") + user.Image
+
 	w.WriteHeader(http.StatusOK)
 	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponse(user)}
 	json.NewEncoder(w).Encode(response)
@@ -113,12 +120,20 @@ func (h *handler) GetUser(w http.ResponseWriter, r *http.Request) {
 func (h *handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	request := new(usersdto.UpdateUserRequest)
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
-		json.NewEncoder(w).Encode(response)
-		return
+	dataContex := r.Context().Value("dataFile")
+	fmt.Print("sampe sini ga", dataContex)
+	filename := ""
+	if dataContex != nil {
+		filename = dataContex.(string)
+	}
+
+	request := usersdto.UpdateUserRequest{
+		Fullname: r.FormValue("fullname"),
+		Email:    r.FormValue("email"),
+		Password: r.FormValue("password"),
+		Phone:    r.FormValue("phone"),
+		Location: r.FormValue("location"),
+		Image:    PATH_FILE + filename,
 	}
 
 	id, _ := strconv.Atoi(mux.Vars(r)["id"])
@@ -143,10 +158,6 @@ func (h *handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	if request.Image != "" {
 		user.Image = request.Image
-	}
-
-	if request.Role != "" {
-		user.Role = request.Role
 	}
 
 	data, err := h.UserRepository.UpdateUser(user, id)

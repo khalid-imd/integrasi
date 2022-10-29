@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import "./editProfilePartner.css";
@@ -10,51 +10,52 @@ import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useParams } from "react-router-dom";
 
+import { UserContext } from "../context/userContext";
 import { useQuery, useMutation } from "react-query";
 import { API } from "../config/api";
 
 const EditProfilePartner = () => {
-  const [show, setShow] = useState(false);
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
 
   let navigate = useNavigate();
-  const { id } = useParams();
+  const [show, setShow] = useState(false);
+  //const { id } = useParams();
 
-  const [categories, setCategories] = useState([]); //Store all category data
-  const [categoryId, setCategoryId] = useState([]); //Save the selected category id
+  const [state, dispatch] = useContext(UserContext);
   const [preview, setPreview] = useState(null); //For image preview
   const [product, setProduct] = useState({}); //Store product data
+
+  console.log("ini state", state);
+
   const [form, setForm] = useState({
     fullname: "",
     image: "",
     email: "",
     phone: "",
     location: "",
-  }); //Store product data
+  });
 
-  // Fetching detail product data by id from database
-  let { data: products, refetch } = useQuery("productCache", async () => {
-    const response = await API.get("/product/" + id);
+  let { data: user } = useQuery("editProfileCache", async () => {
+    const response = await API.get("/user/" + state.user.id);
+    console.log("ini respnse", response);
     return response.data.data;
   });
 
   useEffect(() => {
-    if (products) {
-      setPreview(products.image);
+    if (user) {
+      setPreview(user.image);
       setForm({
         ...form,
-        fullname: products.fullname,
-        image: products.image,
-        email: products.email,
-        phone: products.phone,
-        location: products.location,
+        fullname: user.fullname,
+        image: user.image,
+        email: user.email,
+        phone: user.phone,
+        location: user.location,
       });
-      setProduct(products);
     }
-  }, [products]);
+  }, [user]);
 
-  // Handle change data on form
   const handleChange = (e) => {
     setForm({
       ...form,
@@ -62,25 +63,16 @@ const EditProfilePartner = () => {
         e.target.type === "file" ? e.target.files : e.target.value,
     });
 
-    // Create image url for preview
     if (e.target.type === "file") {
       let url = URL.createObjectURL(e.target.files[0]);
       setPreview(url);
     }
   };
 
-  const handleSubmit = useMutation(async (e) => {
+  const handleSubmit = async (e) => {
     try {
       e.preventDefault();
 
-      // Configuration
-      const config = {
-        headers: {
-          "Content-type": "multipart/form-data",
-        },
-      };
-
-      // Store data with FormData as object
       const formData = new FormData();
       if (form.image) {
         formData.set("image", form?.image[0], form?.image[0]?.name);
@@ -90,25 +82,20 @@ const EditProfilePartner = () => {
       formData.set("phone", form.phone);
       formData.set("location", form.location);
 
-      // Insert product data
-      const response = await API.patch(
-        "/product/" + product.id,
-        formData,
-        config
-      );
+      const response = await API.patch("/user/" + user.id, formData);
       console.log(response.data);
 
-      navigate("/product-admin");
+      navigate("/profile-partner");
     } catch (error) {
       console.log(error);
     }
-  });
+  };
 
   return (
     <div className="mx-auto mt-5 w-75 row">
       <h2 className="title col-12">Edit Profile Partner</h2>
 
-      <Form className="mt-5 row" onSubmit={(e) => handleSubmit.mutate(e)}>
+      <Form className="mt-5 row" onSubmit={(e) => handleSubmit(e)}>
         <div className="col-lg-9 order-lg-1 order-1 pb-3">
           <Form.Control
             type="text"
@@ -119,18 +106,11 @@ const EditProfilePartner = () => {
           />
         </div>
         <div class="col-lg-3 order-lg-1 order-2 pb-3">
-          {/* <label
-            class="input-group-text w-100 rounded-end"
-            for="inputGroupFile01"
-          >
-            Attach File
-          </label> */}
           <input
             type="file"
             name="image"
             class="form-control "
             id="inputGroupFile01"
-            // hidden
             onChange={handleChange}
           />
         </div>
@@ -164,7 +144,7 @@ const EditProfilePartner = () => {
             onChange={handleChange}
           />
         </div>
-        <div className="col-lg-3 order-lg-4 order-6 rounded pb-3">
+        <div className="col-lg-3 order-lg-4 order-6 rounded pb-3 mb-5">
           <>
             <Button
               style={{ width: "100%" }}
@@ -191,20 +171,11 @@ const EditProfilePartner = () => {
             </Modal>
           </>
         </div>
-        <div>
-          {/* <Link
-          to="/profile-partner"
-          className="col-lg-3 offset-lg-9 order-lg-5 order-8 pt-5 text-decoration-none"
-        > */}
-          <Button
-            style={{ width: "100%" }}
-            type="submit"
-            className="button col-lg-3 order-lg-3 order-4 mb-5 text-decoration-none"
-          >
+        <div className="col-lg-4 offset-lg-8 order-lg-5 order-7">
+          <Button style={{ width: "100%" }} type="submit" className="button ">
             Save
           </Button>
         </div>
-        {/* </Link> */}
       </Form>
     </div>
   );
