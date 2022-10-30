@@ -8,7 +8,6 @@ import Modal from "react-bootstrap/Modal";
 import { useState } from "react";
 import map4 from "../images/cartpage/mapspopup4.png";
 import map1 from "../images/cartpage/mapspopup1.png";
-import Rp from "rupiah-format";
 
 import { useMutation, useQuery } from "react-query";
 import { API } from "../config/api";
