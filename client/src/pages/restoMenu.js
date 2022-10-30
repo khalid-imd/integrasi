@@ -20,6 +20,7 @@ const RestoMenu = () => {
   const [cart, setCart] = useState({
     product_id: 0,
     status: "",
+    qty: 0,
   });
 
   console.log(cart);
@@ -57,7 +58,11 @@ const RestoMenu = () => {
                       <button
                         className="w-100 bg-order rounded border-0"
                         onClick={(e) => {
-                          setCart({ product_id: item.id, status: "pending" });
+                          setCart({
+                            product_id: item.id,
+                            status: "pending",
+                            qty: +1,
+                          });
                           handleSubmit.mutate(e);
                         }}
                       >

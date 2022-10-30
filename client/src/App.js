@@ -25,7 +25,7 @@ function App() {
     setAuthToken(localStorage.token);
   }
 
-  const navigate = useNavigate;
+  const navigate = useNavigate();
 
   // const [isLoading, setIsLoading] = useState(true)
   const [state, dispatch] = useContext(UserContext);
@@ -56,6 +56,9 @@ function App() {
       });
     } catch (error) {
       console.log(error);
+      if (error.response.data.code === 400) {
+        navigate("/");
+      }
     }
   };
 
