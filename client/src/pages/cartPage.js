@@ -2,14 +2,19 @@ import React from "react";
 import "./cartPage.css";
 import Form from "react-bootstrap/Form";
 import MapIcon from "../images/cartpage/mapicon.png";
-import paketgeprek from "../images/cartpage/reviewpaketgeprek.png";
-import paketgeprekkeju from "../images/cartpage/reviewpaketgeprekkeju.png";
 import bin from "../images/cartpage/bin.png";
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 import { useState } from "react";
 import map4 from "../images/cartpage/mapspopup4.png";
 import map1 from "../images/cartpage/mapspopup1.png";
+
+import { useMutation, useQuery } from "react-query";
+import { API } from "../config/api";
+import { useParams } from "react-router-dom";
+import { useContext } from "react";
+import { UserContext } from "../context/userContext";
+import toRupiah from "@develoka/angka-rupiah-js";
 
 const CartPage = () => {
   const [showLocation, setShowLocation] = useState(false);
@@ -18,6 +23,15 @@ const CartPage = () => {
   const handleShowLocation = () => setShowLocation(true);
   const handleCloseOrder = () => setShowOrder(false);
   const handleShowOrder = () => setShowOrder(true);
+
+  const params = useParams().id;
+  const [state] = useContext(UserContext);
+
+  let { data: transaction } = useQuery("transactionsCache", async () => {
+    const response = await API.get("/transactions");
+    console.log(response.data.data);
+    return response.data.data;
+  });
 
   return (
     <div className="w-75 mx-auto mt-5 row">
@@ -69,49 +83,42 @@ const CartPage = () => {
           Review Your Order
         </label>
         <div className="row">
-          <div className="col-lg-8 order-lg-1 order-1 ">
-            <div className="row mb-3 border-bottom border-top border-dark me-4 pt-3">
-              <div className="col-lg-2 col-sm-12 order-lg-1 order-1">
-                <img src={paketgeprek} style={{ weigh: "100%" }} alt="" />
-              </div>
-              <div className="col-lg-10 col-sm-12 order-lg-1 order-2">
-                <div className="d-flex justify-content-between">
-                  <p className="menu-name">Paket Geprek</p>
-                  <p className="price">Rp. 15.000</p>
-                </div>
-                <div className="d-flex justify-content-between">
-                  <p>
-                    <button className="btn btn-light">-</button> 1{" "}
-                    <button className="btn btn-light">+</button>
-                  </p>
-                  <div>
-                    <img src={bin} alt="" />
+          {transaction?.map(
+            (item) =>
+              item.user_id == state?.user.id && (
+                <div className="col-lg-8 order-lg-1 order-1 ">
+                  <div className="row mb-3 border-bottom border-dark me-4 pt-3">
+                    <div className="col-lg-4 col-sm-12 order-lg-1 order-1">
+                      <img
+                        src={`http://localhost:5000/uploads/${item?.product.image}`}
+                        style={{ width: "100%" }}
+                        alt=""
+                      />
+                    </div>
+                    <div className="col-lg-8 col-sm-12 order-lg-1 order-2">
+                      <div className="d-flex justify-content-between">
+                        <p className="menu-name">{item?.product.title}</p>
+                        <p className="price">
+                          {toRupiah(item.product.price, {
+                            dot: ".",
+                            floatingPoint: 0,
+                          })}
+                        </p>
+                      </div>
+                      <div className="d-flex justify-content-between">
+                        <p>
+                          <button className="btn btn-light">-</button> 1{" "}
+                          <button className="btn btn-light">+</button>
+                        </p>
+                        <div>
+                          <img src={bin} alt="" />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            <div className="row mb-3 me-4 pt-3">
-              <div className="col-lg-2 col-10 order-lg-1 order-1">
-                <img src={paketgeprekkeju} style={{ weigh: "100%" }} alt="" />
-              </div>
-              <div className="col-lg-10 col-sm-12 order-lg-1 order-2">
-                <div className="d-flex justify-content-between">
-                  <p className="menu-name">Paket Geprek Keju</p>
-                  <p className="price">Rp. 20.000</p>
-                </div>
-                <div className="d-flex justify-content-between">
-                  <p>
-                    <button className="btn btn-light">-</button> 1{" "}
-                    <button className="btn btn-light">+</button>
-                  </p>
-                  <div>
-                    <img src={bin} alt="" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+              )
+          )}
 
           <div className="col-lg-4 order-lg-1 order-2">
             <div className="row mb-3 border-bottom border-top border-dark">

@@ -2,9 +2,11 @@ import React from "react";
 import { Card } from "react-bootstrap";
 import "./restoMenu.css";
 
-import { useQuery } from "react-query";
+import { useMutation, useQuery } from "react-query";
 import { API } from "../config/api";
 import { useParams } from "react-router-dom";
+import { useState } from "react";
+import toRupiah from "@develoka/angka-rupiah-js";
 
 const RestoMenu = () => {
   const params = useParams().id;
@@ -13,6 +15,25 @@ const RestoMenu = () => {
     const response = await API.get("/products");
     console.log(response.data.data);
     return response.data.data;
+  });
+
+  const [cart, setCart] = useState({
+    product_id: 0,
+    status: "",
+  });
+
+  console.log(cart);
+
+  const handleSubmit = useMutation(async (e) => {
+    try {
+      e.preventDefault();
+
+      const response = await API.post("/transaction", cart);
+
+      console.log("ini response input transaction", response);
+    } catch (e) {
+      console.log(e);
+    }
   });
 
   return (
@@ -30,8 +51,16 @@ const RestoMenu = () => {
                     <Card.Img variant="top" src={item?.image} />
                     <Card.Body>
                       <Card.Title>{item?.title}</Card.Title>
-                      <Card.Text className="text-red">{item?.price}</Card.Text>
-                      <button className="w-100 bg-order rounded border-0">
+                      <Card.Text className="text-red">
+                        {toRupiah(item?.price, { dot: ".", floatingPoint: 0 })}
+                      </Card.Text>
+                      <button
+                        className="w-100 bg-order rounded border-0"
+                        onClick={(e) => {
+                          setCart({ product_id: item.id, status: "pending" });
+                          handleSubmit.mutate(e);
+                        }}
+                      >
                         Order
                       </button>
                     </Card.Body>
